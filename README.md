@@ -1,12 +1,13 @@
 # go-fcm : FCM Library for Go
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?style=flat-square)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=MYW4MY786JXFN&lc=GB&item_name=go%2dfcm%20development&item_number=go%2dfcm&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg?style=flat-square)](https://github.com/NaySoftware/go-fcm/blob/master/LICENSE)
 
 Firebase Cloud Messaging ( FCM ) Library using golang ( Go )
 
 This library uses HTTP/JSON Firebase Cloud Messaging connection server protocol
 
+This is a fork of https://github.com/NaySoftware/go-fcm
+Changed so it will work in Google App Engine
 
 ###### Features
 
@@ -21,11 +22,10 @@ This library uses HTTP/JSON Firebase Cloud Messaging connection server protocol
 	- Create registration tokens for APNs tokens
 
 
-
 ## Usage
 
 ```
-go get github.com/NaySoftware/go-fcm
+go get github.com/sean-macfarlane/go-fcm
 ```
 
 ## Docs - go-fcm API
@@ -106,7 +106,7 @@ package main
 
 import (
 	"fmt"
-    "github.com/NaySoftware/go-fcm"
+    "github.com/sean-macfarlane/go-fcm"
 )
 
 const (
@@ -114,16 +114,17 @@ const (
      topic = "/topics/someTopic"
 )
 
-func main() {
+func main(ctx appengine.Context) {
+
+	client := urlfetch.Client(ctx)
+    c := fcm.NewFcmClient(serverKey, client)  
 
 	data := map[string]string{
 		"msg": "Hello World1",
 		"sum": "Happy Day",
 	}
 
-	c := fcm.NewFcmClient(serverKey)
 	c.NewFcmMsgTo(topic, data)
-
 
 	status, err := c.Send()
 
@@ -140,7 +141,7 @@ func main() {
 ```
 
 
-### Send to a list of Devices (tokens)
+### Send to a Push Notification to a list of Devices (tokens)
 
 ```go
 
@@ -148,17 +149,24 @@ package main
 
 import (
 	"fmt"
-    "github.com/NaySoftware/go-fcm"
+    "github.com/sean-macfarlane/go-fcm"
 )
 
 const (
 	 serverKey = "YOUR-KEY"
 )
 
-func main() {
+func main(ctx appengine.Context) {
+
+	client := urlfetch.Client(ctx)
+    c := fcm.NewFcmClient(serverKey, client)  
+
+    var NP fcm.NotificationPayload 
+    NP.Title= "Hello World"
+    NP.Body= "Happy Day"
 
 	data := map[string]string{
-		"msg": "Hello World1",
+		"msg": "Hello World",
 		"sum": "Happy Day",
 	}
 
@@ -173,9 +181,9 @@ func main() {
       "token7",
   }
 
-	c := fcm.NewFcmClient(serverKey)
     c.NewFcmRegIdsMsg(ids, data)
-    c.AppendDevices(xds)
+    c.AppendDevices(xds)	
+    c.SetNotificationPayload(&NP)
 
 	status, err := c.Send()
 
